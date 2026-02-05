@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="hero">
+        <h1>🎬 Welcome to CinemaPulse</h1>
+        <p>Real-Time Customer Feedback Analysis for the Movie Industry</p>
+        <a href="{{ url_for('movies') }}" class="btn btn-primary">Explore Movies</a>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-icon">🎥</div>
+            <div class="stat-number">{{ total_movies }}</div>
+            <div class="stat-label">Total Movies</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">💬</div>
+            <div class="stat-number">{{ total_feedbacks }}</div>
+            <div class="stat-label">Customer Reviews</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-number">{{ avg_rating }}</div>
+            <div class="stat-label">Average Rating</div>
+        </div>
+    </div>
+
+    
+    <div class="section-header">
+        <h2>🎬 Now Showing</h2>
+        <p>Check out what's currently playing in theaters</p>
+    </div>
+
+    <div class="movies-grid">
+        {% for movie in now_showing %}
+        <div class="movie-card" data-href="{{ url_for('movie_detail', movie_id=movie.id) }}" style="cursor: pointer;">
+            <div class="movie-poster"
+                 style="background-image: url('{{ movie.poster_url }}');
+                 background-size: cover;
+                 background-position: center;">
+            </div>
+            <div class="movie-info">
+                <h3 class="movie-title">{{ movie.title }}</h3>
+                <p class="movie-genre">{{ movie.genre }}</p>
+                <div class="movie-meta">
+                    <div class="movie-rating">
+                        <span>⭐</span>
+                        <span>{{ movie.average_rating }}</span>
+                        <span>({{ movie.total_feedbacks }})</span>
+                    </div>
+                    <span class="movie-status status-now-showing">Now Showing</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+
+    {% if upcoming %}
+    <div class="section-header">
+        <h2>🔜 Coming Soon</h2>
+        <p>Get ready for these upcoming releases</p>
+    </div>
+
+    <div class="movies-grid">
+        {% for movie in upcoming %}
+        <div class="movie-card" data-href="{{ url_for('movie_detail', movie_id=movie.id) }}" style="cursor: pointer;">
+        <div class="movie-poster"
+                 style="background-image: url('{{ movie.poster_url }}'); 
+                 background-size: cover; 
+                 background-position: center;">
+        </div>
+            <div class="movie-info">
+                <h3 class="movie-title">{{ movie.title }}</h3>
+                <p class="movie-genre">{{ movie.genre }}</p>
+                <div class="movie-meta">
+                    <div class="movie-rating">
+                        <span>📅</span>
+                        <span>{{ movie.release_date|format_date }}</span>
+                    </div>
+                    <span class="movie-status status-upcoming">Upcoming</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+  
+    <div class="hero" style="margin-top: 3rem;">
+        <h2>Share Your Movie Experience</h2>
+        <p>Your feedback helps shape the future of cinema</p>
+        <a href="{{ url_for('movies') }}" class="btn btn-success">Leave a Review</a>
+    </div>
+</div>
+{% endblock %}

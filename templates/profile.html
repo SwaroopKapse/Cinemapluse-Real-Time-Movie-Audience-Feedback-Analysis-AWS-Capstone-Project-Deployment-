@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - CinemaPulse{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <div class="avatar-circle">{{ user.username[0].upper() }}</div>
+        </div>
+        <div class="profile-info">
+            <h1>{{ user.full_name or user.username }}</h1>
+            <p class="profile-username">@{{ user.username }}</p>
+            <p class="profile-email">📧 {{ user.email }}</p>
+            <p class="profile-joined">📅 Member since {{ user.created_at.strftime('%B %Y') }}</p>
+            {% if user.is_admin %}
+            <span class="admin-badge">👑 Admin</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="profile-stats">
+        <div class="stat-card">
+            <div class="stat-icon">💬</div>
+            <div class="stat-number">{{ feedbacks|length }}</div>
+            <div class="stat-label">Reviews Written</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-number">
+                {% if feedbacks %}
+                {{ (feedbacks|sum(attribute='rating') / feedbacks|length)|round(1) }}
+                {% else %}
+                0.0
+                {% endif %}
+            </div>
+            <div class="stat-label">Average Rating</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🎬</div>
+            <div class="stat-number">{{ feedbacks|map(attribute='movie_id')|unique|list|length }}</div>
+            <div class="stat-label">Movies Reviewed</div>
+        </div>
+    </div>
+
+    <div class="section-header">
+        <h2>📝 My Reviews</h2>
+        <p>All your movie reviews in one place</p>
+    </div>
+
+    {% if feedbacks %}
+    <div class="reviews-list">
+        {% for feedback in feedbacks %}
+        <div class="review-card">
+            <div class="review-header">
+                <div>
+                    <h3 class="review-movie-title">
+                        <a href="{{ url_for('movie_detail', movie_id=feedback.movie.id) }}">
+                            {{ feedback.movie.title }}
+                        </a>
+                    </h3>
+                    <div class="review-meta">
+                        <span class="review-rating">
+                            {% for i in range(feedback.rating) %}⭐{% endfor %}
+                        </span>
+                        <span class="review-date">{{ feedback.created_at.strftime('%B %d, %Y') }}</span>
+                    </div>
+                </div>
+                <span class="sentiment-badge sentiment-{{ feedback.sentiment }}">
+                    {{ feedback.sentiment|title }}
+                </span>
+            </div>
+            <div class="review-content">
+                {{ feedback.review }}
+            </div>
+            <div class="review-footer">
+                <span>Watched on: {{ feedback.watch_date|format_date }}</span>
+                {% if feedback.would_recommend %}
+                <span class="recommend-badge">👍 Would Recommend</span>
+                {% else %}
+                <span class="not-recommend-badge">👎 Wouldn't Recommend</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="hero" style="margin: 2rem 0;">
+        <h3>No reviews yet!</h3>
+        <p>Start by watching and reviewing your first movie</p>
+        <a href="{{ url_for('movies') }}" class="btn btn-primary">Browse Movies</a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.profile-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    padding: 3rem 2rem;
+    border-radius: 20px;
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    color: white;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-lg);
+}
+
+.avatar-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    font-weight: bold;
+    border: 4px solid white;
+    backdrop-filter: blur(10px);
+}
+
+.profile-info h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.profile-username {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+}
+
+.profile-email,
+.profile-joined {
+    opacity: 0.8;
+    margin-bottom: 0.3rem;
+}
+
+.admin-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    margin-top: 1rem;
+}
+
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.review-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    transition: transform 0.3s ease;
+}
+
+.review-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.review-movie-title {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.review-movie-title a {
+    color: var(--primary-color);
+}
+
+.review-movie-title a:hover {
+    text-decoration: underline;
+}
+
+.review-meta {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    color: var(--text-light);
+}
+
+.review-rating {
+    color: var(--warning-color);
+}
+
+.review-content {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--text-dark);
+    padding: 1rem 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.review-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.recommend-badge {
+    background: var(--success-color);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.not-recommend-badge {
+    background: var(--danger-color);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .review-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .review-footer {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+}
+</style>
+{% endblock %}

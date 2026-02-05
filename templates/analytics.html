@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard - CinemaPulse{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="section-header">
+        <h2>📊 Analytics Dashboard</h2>
+        <p>Real-time insights into movie feedback and audience sentiment</p>
+    </div>
+
+  
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-icon">🎥</div>
+            <div class="stat-number">{{ total_movies }}</div>
+            <div class="stat-label">Total Movies</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">💬</div>
+            <div class="stat-number">{{ total_feedbacks }}</div>
+            <div class="stat-label">Total Feedbacks</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-number">{{ avg_rating }}</div>
+            <div class="stat-label">Average Rating</div>
+        </div>
+    </div>
+
+    <!-- Analytics Grid -->
+    <div class="analytics-grid">
+       
+        <div class="analytics-card" style="grid-column: span 2;">
+            <h3>🏆 Top Rated Movies</h3>
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Movie</th>
+                            <th>Rating</th>
+                            <th>Reviews</th>
+                            <th>Genre</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in top_movies %}
+                        <tr data-href="{{ url_for('movie_detail', movie_id=item.movie.id) }}" style="cursor: pointer;">
+                            <td><strong>{{ item.movie.title }}</strong></td>
+                            <td>⭐ {{ item.avg_rating }}</td>
+                            <td>{{ item.total_feedbacks }} reviews</td>
+                            <td>{{ item.movie.genre }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sentiment  -->
+        <div class="analytics-card">
+            <h3>😊 Sentiment Analysis</h3>
+            <div class="chart-container">
+                <div class="bar-chart">
+                    <div class="bar-item">
+                        <div class="bar-label">😊 Positive</div>
+                        {% set pos_width = (sentiment_stats.positive / total_feedbacks * 100) if total_feedbacks > 0 else 0 %}
+                        <div class="bar-visual" data-width="{{ pos_width }}" style="background: var(--success-color);">
+                            {{ sentiment_stats.positive }}
+                        </div>
+                    </div>
+                    <div class="bar-item">
+                        <div class="bar-label">😐 Neutral</div>
+                        {% set neut_width = (sentiment_stats.neutral / total_feedbacks * 100) if total_feedbacks > 0 else 0 %}
+                        <div class="bar-visual" data-width="{{ neut_width }}" style="background: var(--warning-color);">
+                            {{ sentiment_stats.neutral }}
+                        </div>
+                    </div>
+                    <div class="bar-item">
+                        <div class="bar-label">😞 Negative</div>
+                        {% set neg_width = (sentiment_stats.negative / total_feedbacks * 100) if total_feedbacks > 0 else 0 %}
+                        <div class="bar-visual" data-width="{{ neg_width }}" style="background: var(--danger-color);">
+                            {{ sentiment_stats.negative }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rating -->
+        <div class="analytics-card">
+            <h3>⭐ Rating Distribution</h3>
+            <div class="chart-container">
+                <div class="bar-chart">
+                    {% for i in range(5, 0, -1) %}
+                    <div class="bar-item">
+                        <div class="bar-label">{{ i }} Star{{ 's' if i > 1 else '' }}</div>
+                        {% set rate_width = (rating_dist[i] / total_feedbacks * 100) if total_feedbacks > 0 else 0 %}
+                        <div class="bar-visual" data-width="{{ rate_width }}" style="background: linear-gradient(135deg, #6C5CE7, #A29BFE);">
+                            {{ rating_dist[i] }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Age Group  -->
+        <div class="analytics-card">
+            <h3>👥 Audience Demographics</h3>
+            <div class="chart-container">
+                <div class="bar-chart">
+                    {% for age, count in age_distribution.items() %}
+                    {% if age %}
+                    <div class="bar-item">
+                        <div class="bar-label">{{ age }}</div>
+                        {% set age_width = (count / total_feedbacks * 100) if total_feedbacks > 0 else 0 %}
+                        <div class="bar-visual" data-width="{{ age_width }}" style="background: linear-gradient(135deg, #FD79A8, #FDCB6E);">
+                            {{ count }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Feedback -->
+        <div class="analytics-card" style="grid-column: span 2;">
+            <h3>💬 Recent Feedback</h3>
+            {% for feedback in recent_feedbacks[:5] %}
+            <div class="feedback-card">
+                <div class="feedback-header">
+                    <div>
+                        <div class="feedback-author">{{ feedback.customer_name }}</div>
+                        <div class="feedback-rating">
+                            {% for i in range(feedback.rating) %}⭐{% endfor %}
+                        </div>
+                    </div>
+                    <span class="sentiment-badge sentiment-{{ feedback.sentiment }}">
+                        {{ feedback.sentiment|title }}
+                    </span>
+                </div>
+                <div class="feedback-content">
+                    <strong>{{ feedback.movie.title }}</strong>: {{ feedback.review[:100] }}{% if feedback.review|length > 100 %}...{% endif %}
+                </div>
+                <div class="feedback-date">
+                    {{ feedback.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    
+    <div class="hero" style="margin-top: 3rem;">
+        <h2>📈 Key Insights</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-top: 2rem; text-align: left;">
+            <div>
+                <h3 style="color: white; margin-bottom: 0.5rem;">Highest Rated</h3>
+                <p style="opacity: 0.9;">
+                    {% if top_movies %}
+                    {{ top_movies[0].movie.title }} leads with {{ top_movies[0].avg_rating }} stars
+                    {% else %}
+                    No data available yet
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                <h3 style="color: white; margin-bottom: 0.5rem;">Audience Sentiment</h3>
+                <p style="opacity: 0.9;">
+                    {{ ((sentiment_stats.positive / total_feedbacks * 100)|round|int) if total_feedbacks > 0 else 0 }}% of reviews are positive
+                </p>
+            </div>
+            <div>
+                <h3 style="color: white; margin-bottom: 0.5rem;">Engagement</h3>
+                <p style="opacity: 0.9;">
+                    {{ (total_feedbacks / total_movies)|round(1) if total_movies > 0 else 0 }} average reviews per movie
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

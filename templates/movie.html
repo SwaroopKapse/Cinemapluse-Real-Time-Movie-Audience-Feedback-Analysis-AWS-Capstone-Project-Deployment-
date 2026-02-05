@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}{{ movie.title }} - CinemaPulse{% endblock %}
+
+{% block content %}
+<div class="container">
+    
+    <div class="movie-detail">
+        <div class="movie-header">
+            <div class="movie-detail-poster" 
+                 style="background-image: url('{{ movie.poster_url }}');
+                 background-size: cover; background-position: center; 
+                 min-height: 400px; 
+                 border-radius: 10px;">
+            </div>
+            <div class="movie-detail-info">
+                <h1>{{ movie.title }}</h1>
+                <div class="movie-detail-meta">
+                    <div class="meta-item">
+                        <span>📅</span>
+                        <span>{{ movie.release_date|format_date }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span>⏱️</span>
+                        <span>{{ movie.duration|format_duration }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span>🎭</span>
+                        <span>{{ movie.genre }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="movie-status status-{{ movie.status|replace('_', '-') }}">
+                            {{ movie.status|replace('_', ' ')|title }}
+                        </span>
+                    </div>
+                </div>
+                <p class="movie-description">{{ movie.description }}</p>
+                <div class="movie-detail-meta">
+                    <div class="meta-item">
+                        <span>🎬</span>
+                        <span><strong>Director:</strong> {{ movie.director }}</span>
+                    </div>
+                </div>
+                <div class="movie-detail-meta">
+                    <div class="meta-item">
+                        <span>🎭</span>
+                        <span><strong>Cast:</strong> {{ movie.cast }}</span>
+                    </div>
+                </div>
+                <div style="margin-top: 2rem;">
+                    {% if session.get('user_id') %}
+                    <a href="{{ url_for('feedback', movie_id=movie.id) }}" class="btn btn-primary">
+                        ✍️ Write a Review
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('login') }}" class="btn btn-primary">
+                        ✍️ Login to Write a Review
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Movie Statistics -->
+        <div class="movie-stats">
+            <div class="stat-item">
+                <div class="stat-value">{{ movie.average_rating }}</div>
+                <div class="stat-title">Average Rating</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ movie.total_feedbacks }}</div>
+                <div class="stat-title">Total Reviews</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ sentiment_dist.positive }}</div>
+                <div class="stat-title">Positive Reviews</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ sentiment_dist.neutral }}</div>
+                <div class="stat-title">Neutral Reviews</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ sentiment_dist.negative }}</div>
+                <div class="stat-title">Negative Reviews</div>
+            </div>
+        </div>
+
+        <!-- Rating  -->
+        <div class="feedbacks-section">
+            <h2>Rating Distribution</h2>
+            <div class="chart-container">
+                <div class="bar-chart">
+                    {% for i in range(5, 0, -1) %}
+                    <div class="bar-item">
+                        <div class="bar-label">{{ i }} Star{{ 's' if i > 1 else '' }}</div>
+                        {% set bar_width = (movie.rating_distribution[i] / movie.total_feedbacks * 100) if movie.total_feedbacks > 0 else 0 %}
+                        <div class="bar-visual" data-width="{{ bar_width }}" style="background: linear-gradient(135deg, #6C5CE7, #A29BFE);">
+                            {{ movie.rating_distribution[i] }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Reviews -->
+        <div class="feedbacks-section">
+            <h2>Customer Reviews</h2>
+            {% if feedbacks %}
+                {% for feedback in feedbacks %}
+                <div class="feedback-card">
+                    <div class="feedback-header">
+                        <div>
+                            <div class="feedback-author">{{ feedback.customer_name }}</div>
+                            <div class="feedback-rating">
+                                {% for i in range(feedback.rating) %}⭐{% endfor %}
+                            </div>
+                        </div>
+                        <span class="sentiment-badge sentiment-{{ feedback.sentiment }}">
+                            {{ feedback.sentiment|title }}
+                        </span>
+                    </div>
+                    <div class="feedback-content">{{ feedback.review }}</div>
+                    <div class="feedback-date">
+                        Watched on {{ feedback.watch_date|format_date }} • 
+                        Posted {{ feedback.created_at.strftime('%B %d, %Y') }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="hero" style="margin: 2rem 0;">
+                    <h3>No reviews yet</h3>
+                    <p>Be the first to share your thoughts about this movie!</p>
+                    {% if session.get('user_id') %}
+                    <a href="{{ url_for('feedback', movie_id=movie.id) }}" class="btn btn-primary">
+                        Write First Review
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('login') }}" class="btn btn-primary">
+                        Login to Write First Review
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

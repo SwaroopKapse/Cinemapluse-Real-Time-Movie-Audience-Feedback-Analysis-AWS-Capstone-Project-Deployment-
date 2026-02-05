@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Feedback for {{ movie.title }} - CinemaPulse{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="section-header">
+        <h2>✍️ Share Your Experience</h2>
+        <p>Tell us what you thought about <strong>{{ movie.title }}</strong></p>
+    </div>
+
+    <div class="form-container">
+        <div class="form-group" style="background: #f8f9fa; padding: 1rem; border-radius: 0.5rem; margin-bottom: 2rem;">
+            <p style="margin: 0;"><strong>Logged in as:</strong> {{ user.full_name or user.username }}</p>
+            <p style="margin: 0; color: var(--text-light);">{{ user.email }}</p>
+        </div>
+        
+        <form method="POST" id="feedbackForm">
+            <
+            <div class="form-group">
+                <label class="form-label">Your Rating *</label>
+                <div class="rating-input">
+                    <input type="radio" id="star5" name="rating" value="5" required>
+                    <label for="star5" title="5 stars">⭐</label>
+                    
+                    <input type="radio" id="star4" name="rating" value="4">
+                    <label for="star4" title="4 stars">⭐</label>
+                    
+                    <input type="radio" id="star3" name="rating" value="3">
+                    <label for="star3" title="3 stars">⭐</label>
+                    
+                    <input type="radio" id="star2" name="rating" value="2">
+                    <label for="star2" title="2 stars">⭐</label>
+                    
+                    <input type="radio" id="star1" name="rating" value="1">
+                    <label for="star1" title="1 star">⭐</label>
+                </div>
+            </div>
+
+            
+            <div class="form-group">
+                <label class="form-label" for="review">Your Review *</label>
+                <textarea id="review" 
+                          name="review" 
+                          class="form-control" 
+                          required 
+                          placeholder="Share your thoughts about the movie... What did you like? What could be better?"></textarea>
+            </div>
+
+            <!-- Watch Date -->
+            <div class="form-group">
+                <label class="form-label" for="watch_date">When did you watch it? *</label>
+                <input type="date" 
+                       id="watch_date" 
+                       name="watch_date" 
+                       class="form-control" 
+                       required 
+                       max="{{ today }}"
+                       value="{{ today }}">
+            </div>
+
+            <!-- Age Group -->
+            <div class="form-group">
+                <label class="form-label" for="age_group">Age Group</label>
+                <select id="age_group" name="age_group" class="form-select">
+                    <option value="">Prefer not to say</option>
+                    <option value="18-25">18-25</option>
+                    <option value="26-35">26-35</option>
+                    <option value="36-45">36-45</option>
+                    <option value="46+">46+</option>
+                </select>
+            </div>
+
+            <!-- Recommendation -->
+            <div class="form-group">
+                <label class="form-label">Would you recommend this movie?</label>
+                <div style="display: flex; gap: 2rem; margin-top: 0.5rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="radio" name="would_recommend" value="yes" checked>
+                        <span>Yes 👍</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="radio" name="would_recommend" value="no">
+                        <span>No 👎</span>
+                    </label>
+                </div>
+            </div>
+
+      
+            <button type="submit" class="btn btn-success btn-block">
+                Submit Feedback
+            </button>
+
+            <div style="margin-top: 1rem; text-align: center;">
+                <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" style="color: var(--text-light);">
+                    ← Back to Movie
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+   
+    document.getElementById('watch_date').max = new Date().toISOString().split('T')[0];
+    document.getElementById('watch_date').value = new Date().toISOString().split('T')[0];
+</script>
+{% endblock %}

@@ -1,0 +1,74 @@
+MOVIEs
+{% extends "base.html" %}
+
+{% block title %}Movies - CinemaPulse{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="section-header">
+        <h2>🎬 All Movies</h2>
+        <p>Browse our complete collection of movies</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+        <div class="filter-group">
+            <label class="form-label">Status</label>
+            <select class="form-select" data-filter="status">
+                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                <option value="now_showing" {% if status_filter == 'now_showing' %}selected{% endif %}>Now Showing</option>
+                <option value="upcoming" {% if status_filter == 'upcoming' %}selected{% endif %}>Upcoming</option>
+                <option value="released" {% if status_filter == 'released' %}selected{% endif %}>Released</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label class="form-label">Genre</label>
+            <select class="form-select" data-filter="genre">
+                <option value="all" {% if genre_filter == 'all' %}selected{% endif %}>All Genres</option>
+                {% for genre in all_genres %}
+                <option value="{{ genre }}" {% if genre_filter == genre %}selected{% endif %}>{{ genre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Movies Grid -->
+    {% if movies %}
+    <div class="movies-grid">
+        {% for movie in movies %}
+        <div class="movie-card" data-href="{{ url_for('movie_detail', movie_id=movie.id) }}" style="cursor: pointer;">
+            <div class="movie-poster"
+                style="background-image: url('{{ movie.poster_url }}'); 
+                height: 350px;
+                background-size: cover; 
+                background-position: center;">
+            </div>
+            <div class="movie-info">
+                <h3 class="movie-title">{{ movie.title }}</h3>
+                <p class="movie-genre">{{ movie.genre }}</p>
+                <div class="movie-meta">
+                    <div class="movie-rating">
+                        {% if movie.total_feedbacks > 0 %}
+                        <span>⭐</span>
+                        <span>{{ movie.average_rating }}</span>
+                        <span>({{ movie.total_feedbacks }})</span>
+                        {% else %}
+                        <span>No ratings yet</span>
+                        {% endif %}
+                    </div>
+                    <span class="movie-status status-{{ movie.status|replace('_', '-') }}">
+                        {{ movie.status|replace('_', ' ')|title }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="hero">
+        <h2>No movies found</h2>
+        <p>Try adjusting your filters</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

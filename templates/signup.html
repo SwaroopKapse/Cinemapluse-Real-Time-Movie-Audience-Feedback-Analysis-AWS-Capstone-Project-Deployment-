@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - CinemaPulse{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-icon">🎬</div>
+                <h2>Join CinemaPulse</h2>
+                <p>Create your account to start reviewing movies</p>
+            </div>
+
+            <form method="POST" class="auth-form" id="signupForm">
+                <div class="form-group">
+                    <label class="form-label" for="username">
+                        <span class="label-icon">👤</span>
+                        Username *
+                    </label>
+                    <input type="text" 
+                           id="username" 
+                           name="username" 
+                           class="form-control" 
+                           required 
+                           placeholder="Choose a unique username"
+                           minlength="3"
+                           autofocus>
+                    <small style="color: var(--text-light);">At least 3 characters</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="email">
+                        <span class="label-icon">📧</span>
+                        Email Address *
+                    </label>
+                    <input type="email" 
+                           id="email" 
+                           name="email" 
+                           class="form-control" 
+                           required 
+                           placeholder="your.email@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="full_name">
+                        <span class="label-icon">✍️</span>
+                        Full Name
+                    </label>
+                    <input type="text" 
+                           id="full_name" 
+                           name="full_name" 
+                           class="form-control" 
+                           placeholder="John Doe (optional)">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">
+                        <span class="label-icon">🔒</span>
+                        Password *
+                    </label>
+                    <input type="password" 
+                           id="password" 
+                           name="password" 
+                           class="form-control" 
+                           required 
+                           placeholder="Create a strong password"
+                           minlength="6">
+                    <small style="color: var(--text-light);">At least 6 characters</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="confirm_password">
+                        <span class="label-icon">🔐</span>
+                        Confirm Password *
+                    </label>
+                    <input type="password" 
+                           id="confirm_password" 
+                           name="confirm_password" 
+                           class="form-control" 
+                           required 
+                           placeholder="Re-enter your password"
+                           minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" required style="margin-top: 0.25rem;">
+                        <span style="font-size: 0.9rem;">
+                            I agree to the <a href="#" style="color: var(--primary-color);">Terms of Service</a> 
+                            and <a href="#" style="color: var(--primary-color);">Privacy Policy</a>
+                        </span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-block auth-btn">
+                    🚀 Create Account
+                </button>
+            </form>
+
+            <div class="auth-divider">
+                <span>OR</span>
+            </div>
+
+            <div class="auth-footer">
+                <p>Already have an account? 
+                    <a href="{{ url_for('login') }}" class="auth-link">Sign in here</a>
+                </p>
+            </div>
+        </div>
+
+        <div class="auth-info">
+            <h3>🌟 What You'll Get</h3>
+            <ul class="benefits-list">
+                <li>
+                    <span class="benefit-icon">💬</span>
+                    <div>
+                        <strong>Share Your Voice</strong>
+                        <p>Write reviews and rate movies you've watched</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="benefit-icon">📚</span>
+                    <div>
+                        <strong>Review History</strong>
+                        <p>Keep track of all movies you've reviewed</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="benefit-icon">🎯</span>
+                    <div>
+                        <strong>Personalized Profile</strong>
+                        <p>Build your movie enthusiast profile</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="benefit-icon">🌍</span>
+                    <div>
+                        <strong>Join Community</strong>
+                        <p>Connect with fellow movie lovers worldwide</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="benefit-icon">🔒</span>
+                    <div>
+                        <strong>Secure & Private</strong>
+                        <p>Your data is encrypted and protected</p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('signupForm').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    
+    if (password !== confirmPassword) {
+        e.preventDefault();
+        alert('Passwords do not match!');
+        return false;
+    }
+    
+    if (password.length < 6) {
+        e.preventDefault();
+        alert('Password must be at least 6 characters long!');
+        return false;
+    }
+});
+</script>
+
+<style>
+.auth-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    max-width: 1000px;
+    margin: 3rem auto;
+    padding: 2rem;
+}
+
+.auth-card {
+    background: white;
+    padding: 3rem;
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.auth-header h2 {
+    font-size: 2rem;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+}
+
+.auth-header p {
+    color: var(--text-light);
+}
+
+.auth-form {
+    margin: 2rem 0;
+}
+
+.label-icon {
+    margin-right: 0.5rem;
+}
+
+.auth-btn {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    font-size: 1.1rem;
+}
+
+.auth-divider {
+    text-align: center;
+    margin: 2rem 0;
+    position: relative;
+}
+
+.auth-divider::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 45%;
+    height: 1px;
+    background: var(--border-color);
+}
+
+.auth-divider::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    width: 45%;
+    height: 1px;
+    background: var(--border-color);
+}
+
+.auth-divider span {
+    background: white;
+    padding: 0 1rem;
+    color: var(--text-light);
+}
+
+.auth-footer {
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.auth-link {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.auth-link:hover {
+    text-decoration: underline;
+}
+
+.auth-info {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    padding: 3rem;
+    border-radius: 20px;
+    color: white;
+}
+
+.auth-info h3 {
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+}
+
+.benefits-list {
+    list-style: none;
+}
+
+.benefits-list li {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+}
+
+.benefit-icon {
+    font-size: 2rem;
+}
+
+.benefits-list strong {
+    display: block;
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+}
+
+.benefits-list p {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+    .auth-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .auth-info {
+        order: -1;
+    }
+}
+</style>
+{% endblock %}
