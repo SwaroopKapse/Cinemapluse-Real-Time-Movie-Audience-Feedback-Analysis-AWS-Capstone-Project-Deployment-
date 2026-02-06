@@ -13,9 +13,9 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "cinemapulse-secret-key")
 
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 
-DDB_USERS_TABLE = "CinemaPulse_Users"        
-DDB_MOVIES_TABLE = "CinemaPulse_Movies"      
-DDB_FEEDBACK_TABLE = "CinemaPulse_Feedback"  
+DDB_USERS_TABLE = "Cinemapulse_Users"        
+DDB_MOVIES_TABLE = "Cinemapulse_Movies"      
+DDB_FEEDBACK_TABLE = "Cinemapulse_Feedback"  
 
 SNS_TOPIC_ARN = os.getenv(
     "SNS_TOPIC_ARN",
@@ -202,9 +202,7 @@ def movie_detail(movie_id):
 
 @app.route("/analytics")
 def analytics():
-    feedbacks = get_feedback_table().scan().get("Items", [])
-    movies = get_movies_table().scan().get("Items", [])
-
+    # Define defaults FIRST (contract-first design)
     age_distribution = {
         "18-25": 0,
         "26-35": 0,
@@ -212,17 +210,37 @@ def analytics():
         "46+": 0
     }
 
-    return render_template(
-        "analytics.html",
-        total_feedbacks=len(feedbacks),
-        total_movies=len(movies),
-        avg_rating=0.0,
-        sentiment_stats={"positive": 0, "neutral": 0, "negative": 0},
-        rating_dist={},
-        age_distribution=age_distribution,
-        top_movies=[],
-        recent_feedbacks=[]
-    )
+    try:
+        feedbacks = get_feedback_table().scan().get("Items", [])
+        movies = get_movies_table().scan().get("Items", [])
+
+        return render_template(
+            "analytics.html",
+            total_feedbacks=len(feedbacks),
+            total_movies=len(movies),
+            avg_rating=0.0,
+            sentiment_stats={"positive": 0, "neutral": 0, "negative": 0},
+            rating_dist={},
+            age_distribution=age_distribution,   # ALWAYS PRESENT
+            top_movies=[],
+            recent_feedbacks=[]
+        )
+
+    except ClientError as e:
+        print(f"Analytics Error: {e}")
+        flash("Error loading analytics", "error")
+
+        return render_template(
+            "analytics.html",
+            total_feedbacks=0,
+            total_movies=0,
+            avg_rating=0.0,
+            sentiment_stats={"positive": 0, "neutral": 0, "negative": 0},
+            rating_dist={},
+            age_distribution=age_distribution,   # STILL PRESENT
+            top_movies=[],
+            recent_feedbacks=[]
+        )
 
 # ===================== PROFILE =====================
 
