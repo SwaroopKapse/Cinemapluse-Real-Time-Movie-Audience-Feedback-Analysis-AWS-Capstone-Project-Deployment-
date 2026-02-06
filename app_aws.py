@@ -15,7 +15,7 @@ AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 DDB_USERS_TABLE = "CinemaPulse_Users"
 DDB_MOVIES_TABLE = "CinemaPulse_Movies"
 DDB_FEEDBACK_TABLE = "CinemaPulse_Feedback"
-SNS_TOPIC_ARN = os.getenv("SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:000000000000:cinemapulse-feedback")
+SNS_TOPIC_ARN = os.getenv("SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:253490788465:Cinemapulse_topic")
 
 def get_dynamodb():
     return boto3.resource("dynamodb", region_name=AWS_REGION)
