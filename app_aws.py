@@ -8,19 +8,42 @@ from decimal import Decimal
 import uuid
 import os
 
+# ===================== APP INIT =====================
+
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "cinemapulse-secret-key")
 
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 
-DDB_USERS_TABLE = "Cinemapulse_Users"        
-DDB_MOVIES_TABLE = "Cinemapulse_Movies"      
-DDB_FEEDBACK_TABLE = "Cinemapulse_Feedback"  
+DDB_USERS_TABLE = "Cinemapulse_Users"
+DDB_MOVIES_TABLE = "Cinemapulse_Movies"
+DDB_FEEDBACK_TABLE = "Cinemapulse_Feedback"
 
 SNS_TOPIC_ARN = os.getenv(
     "SNS_TOPIC_ARN",
     "arn:aws:sns:us-east-1:253490788465:Cinemapulse_topic"
 )
+
+# ===================== JINJA FILTERS  =====================
+
+@app.template_filter("format_date")
+def format_date(value):
+    if not value:
+        return ""
+    try:
+        if isinstance(value, str):
+            value = datetime.fromisoformat(value)
+        return value.strftime("%B %d, %Y")
+    except Exception:
+        return value
+
+@app.template_filter("format_duration")
+def format_duration(minutes):
+    try:
+        minutes = int(minutes)
+        return f"{minutes // 60}h {minutes % 60}m"
+    except Exception:
+        return minutes
 
 # ===================== AWS HELPERS =====================
 
@@ -47,7 +70,7 @@ def send_sns_notification(subject, message):
             Message=message
         )
     except Exception as e:
-        print(f"SNS ERROR (non-critical): {e}")
+        print(f"SNS ERROR (ignored): {e}")
 
 # ===================== AUTH DECORATORS =====================
 
@@ -55,7 +78,6 @@ def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         if "username" not in session:
-            flash("Please login first", "error")
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return wrapper
@@ -64,34 +86,25 @@ def admin_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         if not session.get("is_admin"):
-            flash("Admin access required", "error")
             return redirect(url_for("index"))
         return f(*args, **kwargs)
     return wrapper
 
-# ===================== AUTH ROUTES =====================
+# ===================== AUTH =====================
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        email = request.form.get("email", "").strip()
-        password = request.form.get("password", "").strip()
+        username = request.form["username"].strip()
+        email = request.form["email"].strip()
+        password = request.form["password"].strip()
 
         if not username or not email or not password:
             flash("All fields required", "error")
             return redirect(url_for("signup"))
 
-        if len(password) < 6:
-            flash("Password must be at least 6 characters", "error")
-            return redirect(url_for("signup"))
-
         try:
-            existing = get_users_table().get_item(
-                Key={"username": username}
-            ).get("Item")
-
-            if existing:
+            if get_users_table().get_item(Key={"username": username}).get("Item"):
                 flash("Username already exists", "error")
                 return redirect(url_for("signup"))
 
@@ -103,70 +116,50 @@ def signup():
                 "created_at": datetime.utcnow().isoformat()
             })
 
-            send_sns_notification(
-                "New User Signup",
-                f"User {username} registered"
-            )
-
-            flash("Signup successful! Please log in.", "success")
+            send_sns_notification("New Signup", f"{username} registered")
+            flash("Signup successful", "success")
             return redirect(url_for("login"))
 
         except ClientError as e:
-            print(f"Signup Error: {e}")
+            print(e)
             flash("Signup failed", "error")
-            return redirect(url_for("signup"))
 
     return render_template("signup.html")
-
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "").strip()
-
-        if not username or not password:
-            flash("Username and password required", "error")
-            return redirect(url_for("login"))
+        username = request.form["username"].strip()
+        password = request.form["password"].strip()
 
         try:
-            response = get_users_table().get_item(
-                Key={"username": username}
-            )
-            user = response.get("Item")
-
+            user = get_users_table().get_item(Key={"username": username}).get("Item")
             if user and user["password"] == password:
-                session["username"] = user["username"]
+                session["username"] = username
                 session["is_admin"] = user.get("is_admin", False)
-
-                send_sns_notification(
-                    "User Login",
-                    f"User {username} logged in"
-                )
-
-                flash(f"Welcome, {username}!", "success")
+                flash("Login successful", "success")
                 return redirect(url_for("index"))
-
-            flash("Invalid username or password", "error")
-
         except ClientError as e:
-            print(f"Login Error: {e}")
-            flash("Login failed", "error")
+            print(e)
+
+        flash("Invalid credentials", "error")
 
     return render_template("login.html")
-
 
 @app.route("/logout")
 def logout():
     session.clear()
-    flash("Logged out successfully", "success")
     return redirect(url_for("index"))
 
-# ===================== MAIN PAGES =====================
+# ===================== MAIN =====================
 
 @app.route("/")
 def index():
-    movies = get_movies_table().scan().get("Items", [])
+    try:
+        movies = get_movies_table().scan().get("Items", [])
+    except ClientError:
+        movies = []
+
     return render_template(
         "index.html",
         movies=movies,
@@ -177,89 +170,47 @@ def index():
 
 @app.route("/movies")
 def movies():
-    movies_list = get_movies_table().scan().get("Items", [])
-    return render_template("movies.html", movies=movies_list)
+    try:
+        movies = get_movies_table().scan().get("Items", [])
+    except ClientError:
+        movies = []
+    return render_template("movies.html", movies=movies)
 
 @app.route("/movie/<movie_id>")
 def movie_detail(movie_id):
-    movie = get_movies_table().get_item(
-        Key={"movie_id": movie_id}
-    ).get("Item")
+    movie = get_movies_table().get_item(Key={"movie_id": movie_id}).get("Item")
 
-    feedbacks = get_feedback_table().scan().get("Items", [])
+    try:
+        feedbacks = get_feedback_table().scan().get("Items", [])
+    except ClientError:
+        feedbacks = []
 
-    movie_feedbacks = [
-        f for f in feedbacks if f.get("movie_id") == movie_id
-    ]
+    movie_feedbacks = [f for f in feedbacks if f.get("movie_id") == movie_id]
 
-    return render_template(
-        "movie.html",
-        movie=movie,
-        feedbacks=movie_feedbacks
-    )
+    return render_template("movie.html", movie=movie, feedbacks=movie_feedbacks)
 
 # ===================== ANALYTICS =====================
 
 @app.route("/analytics")
 def analytics():
-    # Define defaults FIRST (contract-first design)
-    age_distribution = {
-        "18-25": 0,
-        "26-35": 0,
-        "36-45": 0,
-        "46+": 0
-    }
+    age_distribution = {"18-25": 0, "26-35": 0, "36-45": 0, "46+": 0}
 
     try:
         feedbacks = get_feedback_table().scan().get("Items", [])
         movies = get_movies_table().scan().get("Items", [])
-
-        return render_template(
-            "analytics.html",
-            total_feedbacks=len(feedbacks),
-            total_movies=len(movies),
-            avg_rating=0.0,
-            sentiment_stats={"positive": 0, "neutral": 0, "negative": 0},
-            rating_dist={},
-            age_distribution=age_distribution,   # ALWAYS PRESENT
-            top_movies=[],
-            recent_feedbacks=[]
-        )
-
-    except ClientError as e:
-        print(f"Analytics Error: {e}")
-        flash("Error loading analytics", "error")
-
-        return render_template(
-            "analytics.html",
-            total_feedbacks=0,
-            total_movies=0,
-            avg_rating=0.0,
-            sentiment_stats={"positive": 0, "neutral": 0, "negative": 0},
-            rating_dist={},
-            age_distribution=age_distribution,   # STILL PRESENT
-            top_movies=[],
-            recent_feedbacks=[]
-        )
-
-# ===================== PROFILE =====================
-
-@app.route("/profile")
-@login_required
-def profile():
-    user = get_users_table().get_item(
-        Key={"username": session["username"]}
-    ).get("Item")
-
-    feedbacks = get_feedback_table().scan().get("Items", [])
-    user_feedbacks = [
-        f for f in feedbacks if f.get("username") == session["username"]
-    ]
+    except ClientError:
+        feedbacks, movies = [], []
 
     return render_template(
-        "profile.html",
-        user=user,
-        feedbacks=user_feedbacks
+        "analytics.html",
+        total_feedbacks=len(feedbacks),
+        total_movies=len(movies),
+        avg_rating=0.0,
+        sentiment_stats={"positive": 0, "neutral": 0, "negative": 0},
+        rating_dist={},
+        age_distribution=age_distribution,
+        top_movies=[],
+        recent_feedbacks=[]
     )
 
 # ===================== FEEDBACK =====================
@@ -268,27 +219,17 @@ def profile():
 @login_required
 def feedback(movie_id):
     if request.method == "POST":
-        feedback_id = str(uuid.uuid4())
-        rating = int(request.form.get("rating", 3))
-        review = request.form.get("review", "")
-        sentiment = request.form.get("sentiment", "neutral")
-
         get_feedback_table().put_item(Item={
-            "feedback_id": feedback_id,
+            "feedback_id": str(uuid.uuid4()),
             "movie_id": movie_id,
             "username": session["username"],
-            "rating": Decimal(str(rating)),
-            "review": review,
-            "sentiment": sentiment,
+            "rating": Decimal(request.form.get("rating", "3")),
+            "review": request.form.get("review", ""),
+            "sentiment": request.form.get("sentiment", "neutral"),
             "created_at": datetime.utcnow().isoformat()
         })
 
-        send_sns_notification(
-            "New Feedback",
-            f"Feedback added for movie {movie_id}"
-        )
-
-        flash("Feedback submitted!", "success")
+        send_sns_notification("New Feedback", f"Feedback for {movie_id}")
         return redirect(url_for("index"))
 
     return render_template("feedback.html")
@@ -297,7 +238,10 @@ def feedback(movie_id):
 
 @app.route("/api/movies")
 def api_movies():
-    return jsonify(get_movies_table().scan().get("Items", []))
+    try:
+        return jsonify(get_movies_table().scan().get("Items", []))
+    except ClientError:
+        return jsonify([])
 
 # ===================== RUN =====================
 
